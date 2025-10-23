@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
 
 const SECRET = process.env.JWT_SECRET!;
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME!;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD!;
+const ADMIN_USERNAME = process.env.SUPER_ADMIN_USERNAME!;
+const ADMIN_PASSWORD = process.env.SUPER_ADMIN_PASSWORD!;
 
 export function verifyLogin(username: string, password: string) {
   return username === ADMIN_USERNAME && password === ADMIN_PASSWORD;
