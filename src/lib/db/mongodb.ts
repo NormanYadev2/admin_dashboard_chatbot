@@ -1,27 +1,49 @@
 import mongoose from "mongoose";
+import { buildMongoURI } from "@/lib/utils/mongodb-utils";
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-const DB_NAME = process.env.MONGODB_DB_NAME || "ai_chatbot";
+let defaultConnection: mongoose.Connection | null = null;
+const tenantConnections: { [key: string]: mongoose.Connection } = {};
 
-if (!MONGODB_URI) throw new Error("MONGODB_URI not found in .env");
-
-let isConnected = false;
-
-export async function connectDB() {
-  if (isConnected) return;
+export async function connectDB(databaseName?: string) {
+  // If no specific database requested, return default connection or null
+  if (!databaseName) {
+    return defaultConnection;
+  }
+  
+  // If we already have a connection for this database, return it
+  if (tenantConnections[databaseName]) {
+    return tenantConnections[databaseName];
+  }
 
   try {
-    // Add timeout and retry options
-    await mongoose.connect(MONGODB_URI, {
-      dbName: DB_NAME,
-      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
-      socketTimeoutMS: 45000, // 45 seconds socket timeout
-      family: 4, // Use IPv4, skip trying IPv6
+    const mongoURI = buildMongoURI(databaseName);
+    
+    // Create a new connection for this database
+    const connection = mongoose.createConnection(mongoURI, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+      family: 4,
       retryWrites: true,
       retryReads: true,
     });
-    isConnected = true;
-    console.log(`MongoDB connected to database: ${DB_NAME}`);
+    
+    tenantConnections[databaseName] = connection;
+    
+    // If this is the first connection, also set it as default (for backward compatibility)
+    if (!defaultConnection) {
+      defaultConnection = connection;
+      // Also connect mongoose default for existing models
+      await mongoose.connect(mongoURI, {
+        serverSelectionTimeoutMS: 10000,
+        socketTimeoutMS: 45000,
+        family: 4,
+        retryWrites: true,
+        retryReads: true,
+      });
+    }
+    
+    console.log(`MongoDB connection created for database: ${databaseName}`);
+    return connection;
   } catch (err) {
     console.error("MongoDB connection error:", err);
     
@@ -38,4 +60,21 @@ export async function connectDB() {
     
     throw err;
   }
+}
+
+// Helper function to get a model for a specific tenant database
+export async function getTenantModel<T>(
+  databaseName: string,
+  modelName: string,
+  schema: mongoose.Schema
+): Promise<mongoose.Model<T>> {
+  const connection = await connectDB(databaseName) as mongoose.Connection;
+  
+  // Check if model already exists on this connection
+  if (connection.models[modelName]) {
+    return connection.models[modelName];
+  }
+  
+  // Create the model on this connection
+  return connection.model<T>(modelName, schema);
 }

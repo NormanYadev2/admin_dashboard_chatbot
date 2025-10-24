@@ -13,7 +13,7 @@ export interface IApiUsage {
 }
 
 // Define the schema normally
-const ApiUsageSchema = new Schema<IApiUsage>(
+export const ApiUsageSchema = new Schema<IApiUsage>(
   {
     model: { type: String, required: true },
     openaiTokens: { type: Number, default: 0 },
