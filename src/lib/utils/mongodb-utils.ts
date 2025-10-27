@@ -1,9 +1,21 @@
 // MongoDB URI utility functions
-const MONGODB_BASE_URI = process.env.MONGODB_BASE_URI!;
-const MONGODB_OPTIONS = process.env.MONGODB_OPTIONS || "";
 
-if (!MONGODB_BASE_URI) {
-  throw new Error("MONGODB_BASE_URI not found in .env");
+/**
+ * Get MongoDB base URI from environment with runtime check
+ */
+function getMongoDBBaseURI(): string {
+  const baseUri = process.env.MONGODB_BASE_URI;
+  if (!baseUri) {
+    throw new Error("MONGODB_BASE_URI not found in .env");
+  }
+  return baseUri;
+}
+
+/**
+ * Get MongoDB options from environment
+ */
+function getMongoDBOptions(): string {
+  return process.env.MONGODB_OPTIONS || "";
 }
 
 /**
@@ -12,6 +24,8 @@ if (!MONGODB_BASE_URI) {
  * @returns Complete MongoDB URI
  */
 export function buildMongoURI(databaseName: string): string {
+  const MONGODB_BASE_URI = getMongoDBBaseURI();
+  const MONGODB_OPTIONS = getMongoDBOptions();
   return `${MONGODB_BASE_URI}/${databaseName}${MONGODB_OPTIONS}`;
 }
 

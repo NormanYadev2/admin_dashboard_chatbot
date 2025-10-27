@@ -6,21 +6,20 @@
  * Usage: tsx scripts/add-admin.ts
  */
 
+// Load environment variables FIRST before any other imports
 import dotenv from 'dotenv';
+dotenv.config();
+
+// Now import everything else
 import { getAdminCredentialsModel } from "../src/lib/db/credentials";
 import { hashPassword } from "../src/lib/utils/password";
-import { buildTenantDatabaseName } from "../src/lib/utils/mongodb-utils";
-
-// Load environment variables
-dotenv.config();
 
 interface NewAdminData {
   name?: string;
   username: string;
   password: string;
-  tenantId: string;
-  databaseName?: string;
   role?: "admin" | "superadmin";
+  tenantId: string;
   isActive?: boolean;
 }
 
@@ -32,7 +31,7 @@ export async function addNewAdmin(
   name?: string
 ) {
   try {
-    console.log(`🔐 Adding new admin: ${username}`);
+    console.log(` Adding new admin: ${username}`);
     
     const AdminCredentials = await getAdminCredentialsModel();
     
@@ -43,17 +42,16 @@ export async function addNewAdmin(
     }
     
     // Hash the password
-    console.log("🔄 Hashing password...");
+    console.log("Hashing password...");
     const hashedPassword = await hashPassword(plainPassword);
     
-    // Create new admin data
-    const adminData: NewAdminData = {
+    // Create new admin data with correct field order (role before tenantId)
+    const adminData = {
       name: name || username,
       username,
       password: hashedPassword,
-      tenantId,
-      databaseName: buildTenantDatabaseName(tenantId),
       role,
+      tenantId,
       isActive: true,
     };
     
@@ -61,10 +59,9 @@ export async function addNewAdmin(
     const newAdmin = new (AdminCredentials as any)(adminData);
     await newAdmin.save();
     
-    console.log(`✅ Successfully added admin: ${username}`);
+    console.log(` Successfully added admin: ${username}`);
     console.log(`   - Role: ${role}`);
     console.log(`   - Tenant: ${tenantId}`);
-    console.log(`   - Database: ${adminData.databaseName}`);
     
     return {
       success: true,
@@ -72,7 +69,6 @@ export async function addNewAdmin(
         username: adminData.username,
         role: adminData.role,
         tenantId: adminData.tenantId,
-        databaseName: adminData.databaseName,
       }
     };
     
@@ -85,30 +81,25 @@ export async function addNewAdmin(
 // Example usage function
 async function addExampleAdmins() {
   try {
-    // Add admin for 'newclient' tenant
+    // Add admin for sas tenant
     await addNewAdmin(
-      "john_newclient",    // username
-      "securePassword123", // password
-      "newclient",         // tenantId
-      "admin",             // role
-      "John Smith"         // name (optional)
+      "",    // username
+      "",       // password
+      "",          // tenantId
+      "",        // role
+      ""     // name (matching the username for consistency)
     );
     
-    // Add admin for 'company' tenant
-    await addNewAdmin(
-      "admin_company",
-      "myPassword456",
-      "company",
-      "admin",
-      "Company Admin"
-    );
-    
-    console.log("🎉 All example admins added successfully!");
+    console.log(" Admin added successfully!");
     
   } catch (error) {
-    console.error("❌ Failed to add example admins:", error);
+    console.error(" Failed to add admin:", error);
+    process.exit(1);
+  } finally {
+    // Close the database connection
+    process.exit(0);
   }
 }
 
-// Uncomment and run to add example admins:
-// addExampleAdmins();
+// Run the script
+addExampleAdmins();

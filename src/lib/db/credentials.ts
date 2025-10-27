@@ -60,6 +60,11 @@ export async function getAdminCredentialsModel() {
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+      default: "admin",
+      enum: ["admin", "superadmin"],
+    },
     tenantId: {
       type: String,
       required: true,
@@ -68,11 +73,6 @@ export async function getAdminCredentialsModel() {
     databaseName: {
       type: String,
       trim: true,
-    },
-    role: {
-      type: String,
-      default: "admin",
-      enum: ["admin", "superadmin"],
     },
     isActive: {
       type: Boolean,
