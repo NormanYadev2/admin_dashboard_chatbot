@@ -1,6 +1,22 @@
 import jwt from "jsonwebtoken";
 import { getAdminCredentialsModel } from "@/lib/db/credentials";
-import { getCredentialsDatabase, buildTenantDatabaseName } from "@/lib/utils/mongodb-utils";
+import { buildTenantDatabaseName } from "@/lib/utils/mongodb-utils";
+
+// Define interface for admin document from database
+interface AdminDocument {
+  username: string;
+  password: string;
+  tenantId: string;
+  databaseName?: string;
+  role: "admin" | "superadmin";
+  lastLogin?: Date;
+  save(): Promise<void>;
+}
+
+// Define interface for Mongoose model methods we need
+interface AdminCredentialsModel {
+  findOne(query: Record<string, unknown>): Promise<AdminDocument | null>;
+}
 
 const SECRET = process.env.JWT_SECRET!;
 const SUPER_ADMIN_USERNAME = process.env.SUPER_ADMIN_USERNAME!;
@@ -26,10 +42,10 @@ export async function verifyLogin(username: string, password: string): Promise<A
   // Check if it's a regular admin from the database
   try {
     const AdminCredentials = await getAdminCredentialsModel();
-    const admin = await AdminCredentials.findOne({
+    const admin = await ((AdminCredentials as unknown) as AdminCredentialsModel).findOne({
       username,
       password,
-      // Don't check isActive if it's not set in existing data
+      
     });
     
     if (admin) {

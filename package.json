@@ -5,10 +5,15 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
+    "build:safe": "set NODE_OPTIONS=--max-old-space-size=8192 && next build --turbopack",
+    "build:no-lint": "SKIP_LINT=true next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "dotenv": "^17.2.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.2",
     "next": "15.5.5",

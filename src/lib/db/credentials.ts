@@ -1,3 +1,5 @@
+//handles login credentials for all admin users
+
 import mongoose from "mongoose";
 import { buildMongoURI, getCredentialsDatabase } from "@/lib/utils/mongodb-utils";
 
@@ -6,7 +8,7 @@ const CREDENTIALS_DB_NAME = getCredentialsDatabase();
 let isCredentialsConnected = false;
 let credentialsConnection: mongoose.Connection | null = null;
 
-export async function connectCredentialsDB() {
+export async function connectCredentialsDB() {  // Ensures only one connection per database
   if (isCredentialsConnected && credentialsConnection) {
     return credentialsConnection;
   }
@@ -84,7 +86,7 @@ export async function getAdminCredentialsModel() {
       type: Date,
     },
   }, {
-    collection: 'credentials' // Use the existing collection name
+    collection: 'credentials' 
   });
 
   return connection.model("AdminCredentials", AdminCredentialsSchema);

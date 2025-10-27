@@ -29,4 +29,5 @@ const LeadSchema = new Schema<ILead>(
   }
 );
 
+export { LeadSchema };
 export const Lead = models.Lead || mongoose.model<ILead>("Lead", LeadSchema);

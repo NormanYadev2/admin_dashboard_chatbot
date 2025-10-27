@@ -17,8 +17,8 @@ export function buildMongoURI(databaseName: string): string {
 
 /**
  * Constructs database name for a tenant
- * @param tenantId - The tenant ID (e.g., "ai", "sas", "company1")
- * @returns Database name (e.g., "ai_chatbot", "sas_chatbot", "company1_chatbot")
+ * @param tenantId - The tenant ID (e.g., "ai", "sas", "vikasitha")
+ * @returns Database name (e.g., "ai_chatbot", "sas_chatbot", "vikasitha_chatbot")
  */
 export function buildTenantDatabaseName(tenantId: string): string {
   return `${tenantId}_chatbot`;
@@ -29,14 +29,4 @@ export function buildTenantDatabaseName(tenantId: string): string {
  */
 export function getCredentialsDatabase(): string {
   return process.env.CREDENTIALS_DATABASE || "admin_credentials";
-}
-
-/**
- * Gets all available tenant databases for superadmin access
- * This would typically query the credentials database to find all tenants
- */
-export function getAllTenantDatabases(): string[] {
-  // This will be populated dynamically by querying admin credentials
-  // For now, return known databases
-  return ["ai_chatbot", "sas_chatbot"]; // This should be dynamic in real implementation
 }

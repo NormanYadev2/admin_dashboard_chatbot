@@ -9,21 +9,17 @@ import { NextResponse, type NextRequest } from "next/server";
 import { verifyToken, type AdminUser } from "@/lib/auth";
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
-  const url = req.nextUrl.pathname;
+  const token = req.cookies.get("token")?.value;  // Get jwt token from cookies
+  const url = req.nextUrl.pathname;               // Get the requested URL path (like /login, /admin)
 
-  console.log("🔍 Middleware - URL:", url);
-  console.log("🔍 Middleware - Has token:", !!token);
 
-  // For API routes, we need to check the token and set headers without redirecting
+  // if token exist verfiy the token if valid then set the headers of jwt 
+  // with username, role, tenant and database
+
   if (url.startsWith("/api/")) {
     if (token) {
       const decoded = verifyToken(token) as AdminUser | null;
       if (decoded) {
-        console.log("🔍 Middleware - API Route:", url);
-        console.log("🔍 Middleware - Decoded user:", decoded.username, "role:", decoded.role);
-        console.log("🔍 Middleware - Tenant:", decoded.tenantId, "Database:", decoded.databaseName);
-        
         const response = NextResponse.next();
         response.headers.set("x-user-username", decoded.username);
         response.headers.set("x-user-role", decoded.role);
@@ -45,7 +41,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // User logged in, but visiting /login again → redirect to /admin
+  // User logged in, but visiting /login again then redirect to /admin
   if (url === "/login" && token) {
     const decoded = verifyToken(token);
     if (decoded) {
@@ -53,7 +49,7 @@ export function middleware(req: NextRequest) {
     }
   }
 
-  // Token present but invalid or expired
+  // Token present but invalid or expired then redirect to login
   if (token) {
     const decoded = verifyToken(token) as AdminUser | null;
     if (!decoded) {
