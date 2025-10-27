@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { getAdminCredentialsModel } from "@/lib/db/credentials";
 import { buildTenantDatabaseName } from "@/lib/utils/mongodb-utils";
+import { verifyPassword, isPasswordHashed } from "@/lib/utils/password";
 
 // Define interface for admin document from database
 interface AdminDocument {
@@ -42,13 +43,20 @@ export async function verifyLogin(username: string, password: string): Promise<A
   // Check if it's a regular admin from the database
   try {
     const AdminCredentials = await getAdminCredentialsModel();
+    
+    // Find admin by username only (we'll verify password separately)
     const admin = await ((AdminCredentials as unknown) as AdminCredentialsModel).findOne({
       username,
-      password,
-      
     });
     
     if (admin) {
+      // Verify password using bcrypt + AUTH_KEY
+      const isValidPassword = await verifyPassword(password, admin.password);
+      
+      if (!isValidPassword) {
+        console.log(" Password verification failed for user:", username);
+        return null;
+      }
       // Update last login
       admin.lastLogin = new Date();
       await admin.save();
