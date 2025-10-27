@@ -16,17 +16,17 @@ dotenv.config();
 import mongoose from 'mongoose';
 import { hashPassword, isPasswordHashed } from "../src/lib/utils/password";
 
-// Known admin credentials from .env file
+// Admin credentials from .env file
 const knownCredentials = {
-  'admin1': process.env.admin1_password || 'admin1',
-  'vikasitha_admin': process.env.vikasitha_admin_password || '123456',
-  'sas_admin': process.env.sas_admin_password || 'sas123',
+  'admin1': process.env.admin1_password,
+  'vikasitha_admin': process.env.vikasitha_admin_password,
+  'sas_admin': process.env.sas_admin_password,
 };
 
 async function managePasswords() {
   try {
-    console.log(" Starting comprehensive password management...");
-    console.log(` Current AUTH_KEY: ${process.env.AUTH_KEY?.substring(0, 10)}...`);
+    console.log("Starting comprehensive password management...");
+    console.log(`Current AUTH_KEY: ${process.env.AUTH_KEY?.substring(0, 10)}...`);
     
     // Construct MongoDB URI for admin_credentials database
     const baseUri = process.env.MONGODB_BASE_URI;
@@ -58,7 +58,7 @@ async function managePasswords() {
     
     // Find all admin records
     const admins = await Credentials.find({});
-    console.log(` Found ${admins.length} admin records`);
+    console.log(`Found ${admins.length} admin records`);
     
     let processedCount = 0;
     let skippedCount = 0;
@@ -66,7 +66,14 @@ async function managePasswords() {
     
     for (const admin of admins) {
       const username = admin.username;
-      console.log(`\n Processing ${username}...`);
+      console.log(`\nProcessing ${username}...`);
+      
+      // Ensure admin.password exists
+      if (!admin.password) {
+        console.log(`   No password field found for ${username}`);
+        skippedCount++;
+        continue;
+      }
       
       let plainPassword: string | undefined;
       
@@ -74,15 +81,22 @@ async function managePasswords() {
       if (knownCredentials[username as keyof typeof knownCredentials]) {
         // Use known password from .env
         plainPassword = knownCredentials[username as keyof typeof knownCredentials];
-        console.log(`    Using password from .env file`);
+        console.log(`   Using password from .env file`);
       } else if (!isPasswordHashed(admin.password)) {
         // Password is still plain text in database
         plainPassword = admin.password;
-        console.log(`    Using plain text password from database`);
+        console.log(`   Using plain text password from database`);
       } else {
         // Password is already hashed, but we don't know the plain text
-        console.log(`     Password is hashed and no plain text found in .env`);
-        console.log(`    Add ${username}_password=your_password to .env file`);
+        console.log(`   Password is hashed and no plain text found in .env`);
+        console.log(`   Add ${username}_password=your_password to .env file`);
+        skippedCount++;
+        continue;
+      }
+      
+      // Ensure we have a plain password to work with
+      if (!plainPassword) {
+        console.log(`   No plain password available for ${username}`);
         skippedCount++;
         continue;
       }
@@ -94,20 +108,20 @@ async function managePasswords() {
           const isValid = await verifyPassword(plainPassword, admin.password);
           
           if (isValid) {
-            console.log(`    Current hash is valid - no changes needed`);
+            console.log(`   Current hash is valid - no changes needed`);
             skippedCount++;
             continue;
           } else {
-            console.log(`    Current hash invalid with current AUTH_KEY - re-hashing...`);
+            console.log(`   Current hash invalid with current AUTH_KEY - re-hashing...`);
           }
         } catch (error) {
-          console.log(`    Error verifying current hash - re-hashing...`);
+          console.log(`   Error verifying current hash - re-hashing...`);
         }
       }
       
       // Step 3: Hash the password with current AUTH_KEY
       try {
-        console.log(`    Hashing password with current AUTH_KEY...`);
+        console.log(`   Hashing password with current AUTH_KEY...`);
         const hashedPassword = await hashPassword(plainPassword);
         
         // Update the admin record
@@ -115,44 +129,44 @@ async function managePasswords() {
         await admin.save();
         
         processedCount++;
-        console.log(`    Successfully updated ${username}`);
+        console.log(`   Successfully updated ${username}`);
         
       } catch (error) {
-        console.error(`    Failed to hash password for ${username}:`, error);
+        console.error(`   Failed to hash password for ${username}:`, error);
         errorCount++;
       }
     }
     
-    console.log("\n Password management completed!");
-    console.log(` Processed: ${processedCount} passwords`);
-    console.log(`  Skipped: ${skippedCount} passwords (already valid)`);
+    console.log("\nPassword management completed!");
+    console.log(`Processed: ${processedCount} passwords`);
+    console.log(`Skipped: ${skippedCount} passwords (already valid)`);
     if (errorCount > 0) {
-      console.log(` Errors: ${errorCount} passwords`);
+      console.log(`Errors: ${errorCount} passwords`);
     }
     
-    console.log("\n Summary:");
+    console.log("\nSummary:");
     console.log("- All passwords are now hashed with the current AUTH_KEY");
     console.log("- Admin users can log in with their credentials");
     console.log("- If any admins still can't log in, add their plain password to .env file");
     
   } catch (error) {
-    console.error(" Password management failed:", error);
+    console.error("Password management failed:", error);
     process.exit(1);
   } finally {
     // Clean up connection
     await mongoose.disconnect();
-    console.log("🔌 Database connection closed");
+    console.log("Database connection closed");
   }
 }
 
 // Run password management
 managePasswords()
   .then(() => {
-    console.log(" Password management script completed successfully");
+    console.log("Password management script completed successfully");
     process.exit(0);
   })
   .catch((error) => {
-    console.error(" Password management script failed:", error);
+    console.error("Password management script failed:", error);
     process.exit(1);
   });
 

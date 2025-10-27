@@ -15,20 +15,20 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const selectedDb = url.searchParams.get("db");
 
-    console.log(" Usage API - User Role:", userRole);
-    console.log(" Usage API - User Database:", userDatabase);
-    console.log(" Usage API - User Tenant:", userTenant);
-    console.log(" Usage API - Selected DB:", selectedDb);
+    console.log("Usage API - User Role:", userRole);
+    console.log("Usage API - User Database:", userDatabase);
+    console.log("Usage API - User Tenant:", userTenant);
+    console.log("Usage API - Selected DB:", selectedDb);
 
     if (!userRole) {
-      console.log("❌ No user role found");
+      console.log("No user role found");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     if (userRole === "superadmin") {
       // If superadmin selected a specific database
       if (selectedDb) {
-        console.log(" Superadmin accessing specific database:", selectedDb);
+        console.log("Superadmin accessing specific database:", selectedDb);
         try {
           const specificDbName = `${selectedDb}_chatbot`;
           const ApiUsage = await getTenantModel(specificDbName, "ApiUsage", ApiUsageSchema);
@@ -40,26 +40,26 @@ export async function GET(request: Request) {
             _tenant: selectedDb
           }));
           
-          console.log(` Found ${usage.length} usage records in ${specificDbName}`);
+          console.log(`Found ${usage.length} usage records in ${specificDbName}`);
           return NextResponse.json(usageWithTenant);
         } catch (error) {
-          console.error(` Error accessing database ${selectedDb}_chatbot:`, error);
+          console.error(`Error accessing database ${selectedDb}_chatbot:`, error);
           return NextResponse.json({ error: "Failed to access selected database" }, { status: 500 });
         }
       }
 
       // Superadmin can access ALL tenant databases
-      console.log(" Superadmin accessing all tenant databases");
+      console.log("Superadmin accessing all tenant databases");
       
       try {
         const databases = await getAllTenantDatabases();
-        console.log(" Available databases:", databases);
+        console.log("Available databases:", databases);
         
         const allUsage: Record<string, unknown>[] = [];
         
         for (const dbName of databases) {
           try {
-            console.log(` Connecting to database: ${dbName}`);
+            console.log(`Connecting to database: ${dbName}`);
             const ApiUsage = await getTenantModel(dbName, "ApiUsage", ApiUsageSchema);
             const usage = await ApiUsage.find().sort({ timestamp: -1 });
             
@@ -71,9 +71,9 @@ export async function GET(request: Request) {
             }));
             
             allUsage.push(...usageWithDB);
-            console.log(` Found ${usage.length} usage records in ${dbName}`);
+            console.log(`Found ${usage.length} usage records in ${dbName}`);
           } catch (dbError: unknown) {
-            console.log(` Could not access database ${dbName}:`, dbError instanceof Error ? dbError.message : String(dbError));
+            console.log(`Could not access database ${dbName}:`, dbError instanceof Error ? dbError.message : String(dbError));
           }
         }
         

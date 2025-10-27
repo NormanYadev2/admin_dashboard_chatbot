@@ -31,7 +31,7 @@ export async function addNewAdmin(
   name?: string
 ) {
   try {
-    console.log(` Adding new admin: ${username}`);
+    console.log(`Adding new admin: ${username}`);
     
     const AdminCredentials = await getAdminCredentialsModel();
     
@@ -59,7 +59,7 @@ export async function addNewAdmin(
     const newAdmin = new (AdminCredentials as any)(adminData);
     await newAdmin.save();
     
-    console.log(` Successfully added admin: ${username}`);
+    console.log(`Successfully added admin: ${username}`);
     console.log(`   - Role: ${role}`);
     console.log(`   - Tenant: ${tenantId}`);
     
@@ -73,7 +73,7 @@ export async function addNewAdmin(
     };
     
   } catch (error) {
-    console.error("❌ Failed to add admin:", error);
+    console.error("Failed to add admin:", error);
     throw error;
   }
 }
@@ -90,10 +90,10 @@ async function addExampleAdmins() {
       ""     // name (matching the username for consistency)
     );
     
-    console.log(" Admin added successfully!");
+    console.log("Admin added successfully!");
     
   } catch (error) {
-    console.error(" Failed to add admin:", error);
+    console.error("Failed to add admin:", error);
     process.exit(1);
   } finally {
     // Close the database connection
